@@ -3,49 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Adicciones</title>
+    <title>Control de Hábitos 💎</title>
     <link rel="stylesheet" href="style.css">
-    <!-- CDN de Supabase para la conexión a la base de datos -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div id="auth-container" class="container">
-        <h2>Acceso al Sistema</h2>
-        <form id="auth-form">
-            <input type="email" id="email" placeholder="Correo electrónico" required>
-            <input type="password" id="password" placeholder="Contraseña" required>
-            <button type="submit" id="login-btn">Iniciar Sesión</button>
-            <button type="button" id="register-btn">Registrarse</button>
-        </form>
-        <p id="auth-message"></p>
+    <div class="container">
+        
+        <div id="auth-screen">
+            <h1>Bienvenido 💎</h1>
+            <p class="subtitle">Inicia sesión o regístrate para guardar tu progreso.</p>
+
+            <div class="input-section">
+                <input type="email" id="input-correo" placeholder="Correo electrónico" required>
+                <input type="password" id="input-password" placeholder="Contraseña" required>
+                
+                <button id="btn-ingresar" type="button">Ingresar</button>
+                <button id="btn-registrar" type="button" style="background-color: #6f7e76; margin-top: 12px;">Registrarme</button>
+            </div>
+        </div>
+
+        <div id="main-screen" style="display: none;">
+            <h1>Mi Progreso 💎</h1>
+            <p class="subtitle">Registra y mantén el control de tus hábitos.</p>
+
+            <div class="input-section">
+                <div class="select-group">
+                    <span class="emoji-icon">🌱</span>
+                    <select id="habit-select">
+                        <option value="" disabled selected>Selecciona una opción...</option>
+                        <option value="Fumar">🚬 Fumar</option>
+                        <option value="Alcohol">🍺 Alcohol</option>
+                        <option value="Comida Chatarra">🍔 Comida Chatarra</option>
+                        <option value="Redes Sociales">📱 Redes Sociales</option>
+                        <option value="Compras">🛍️ Compras impulsivas</option>
+                        <option value="Otro">✍️ Otro (especificar)</option>
+                    </select>
+                </div>
+                
+                <div id="custom-habit-container" class="edit-group" style="display: none;">
+                    <div class="emoji-picker-container">
+                        <button id="new-emoji-btn" type="button">✍️</button>
+                        <div id="new-emoji-picker-box" style="display: none;"></div>
+                    </div>
+                    <input type="text" id="other-input" placeholder="¿Qué hábito es?">
+                </div>
+                
+                <button id="add-btn">Agregar a la lista</button>
+            </div>
+
+            <ul id="habit-list">
+            </ul>
+        </div>
+
+        <div id="detail-screen" style="display: none;">
+            
+            <div class="detail-header">
+                <button id="back-btn">⬅ Volver</button>
+                <button id="edit-btn">✏️ Editar</button>
+            </div>
+            
+            <div id="view-mode">
+                <div class="detail-title-wrapper">
+                    <div id="detail-emoji"></div>
+                    <h2 id="detail-title">Nombre del Hábito</h2>
+                    <button id="detail-plus-btn" class="plus-btn detail-plus" title="Sumar +1">+1</button>
+                </div>
+            </div>
+
+            <div id="edit-mode" style="display: none;">
+                <div class="edit-group">
+                    
+                    <div class="emoji-picker-container">
+                        <button id="edit-emoji-btn" type="button">🔹</button>
+                        <div id="emoji-picker-box" style="display: none;"></div>
+                    </div>
+
+                    <input type="text" id="edit-name" placeholder="Nombre de la adicción">
+                </div>
+                <button id="save-edit-btn">Guardar Cambios</button>
+            </div>
+            
+            <div class="detail-card">
+                <p><strong>Registrado desde:</strong> <br><span id="detail-date"></span></p>
+                <p><strong>Cantidad actual:</strong> <br><span id="detail-count" class="highlight-count">0</span></p>
+            </div>
+
+            <div class="chart-section">
+                <h3>Progreso Mensual</h3>
+                <div class="canvas-container">
+                    <canvas id="progress-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <h3>Historial de Registros</h3>
+                <ul id="detail-history-list"></ul>
+            </div>
+
+            <div class="motivation-box">
+                <p id="detail-quote">"Frase motivacional"</p>
+            </div>
+
+            <button id="delete-btn">🗑️ Eliminar registro</button>
+        </div>
+
     </div>
 
-    <div id="app-container" class="container hidden">
-        <header>
-            <h2>Mi Control de Adicciones</h2>
-            <button id="logout-btn">Cerrar Sesión</button>
-        </header>
-        
-        <main>
-            <section class="tracker-section">
-                <h3>Registrar Actividad</h3>
-                <form id="tracker-form">
-                    <input type="text" id="habit-name" placeholder="Ej. Redes Sociales, Azúcar" required>
-                    <input type="number" id="habit-level" placeholder="Nivel de ansiedad (1-10)" min="1" max="10" required>
-                    <button type="submit">Guardar Registro</button>
-                </form>
-            </section>
-            
-            <section class="history-section">
-                <h3>Historial de Registros</h3>
-                <ul id="history-list">
-                    <!-- Los registros se cargarán aquí desde Supabase -->
-                </ul>
-            </section>
-        </main>
-    </div>
-    <!-- Cargar Supabase antes que tu script local -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>
