@@ -1,46 +1,78 @@
+// ==========================================
+// 1. CONFIGURACIÓN DE SUPABASE
+// ==========================================
+const supabaseUrl = 'https://lbpgjngptaliadsbzwkw.supabase.co'; // REEMPLAZA ESTO
+const supabaseKey = 'sb_publishable_Q74oalzTl4iSQReg6xEgpg_25Ff-kcu'; // REEMPLAZA ESTO
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- 1. CONEXIÓN A SUPABASE ---
-const supabaseUrl = 'https://lbpgjngptaliadsbzwkw.supabase.co'; // <-- REEMPLAZA AQUÍ
-const supabaseAnonKey = 'sb_publishable_Q74oalzTl4iSQReg6xEgpg_25Ff-kcu'; // <-- REEMPLAZA AQUÍ
-const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-// --- 2. REFERENCIAS PARA AUTENTICACIÓN ---
+// ==========================================
+// 2. REFERENCIAS A LA PANTALLA DE AUTENTICACIÓN
+// ==========================================
 const authScreen = document.getElementById('auth-screen');
-const authForm = document.getElementById('auth-form');
-const emailInput = document.getElementById('email-input');
-const passwordInput = document.getElementById('password-input');
-const registerBtn = document.getElementById('register-btn');
 const mainScreen = document.getElementById('main-screen');
+const detailScreen = document.getElementById('detail-screen');
+const btnRegistrar = document.getElementById('btn-registrar');
+const btnIngresar = document.getElementById('btn-ingresar');
+const inputCorreo = document.getElementById('input-correo');
+const inputPassword = document.getElementById('input-password');
 
-// --- 3. LÓGICA DE LOGIN Y REGISTRO ---
-registerBtn.addEventListener('click', async () => {
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    if (!email || !password) return alert('Llena tu correo y contraseña');
-    
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) alert('Error al registrar: ' + error.message);
-    else alert('Registro exitoso. ¡Ahora presiona Ingresar!');
-});
+// ==========================================
+// 3. LÓGICA DE INICIO DE SESIÓN Y REGISTRO
+// ==========================================
 
-authForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); // Esta línea es la magia que evita que se recargue la página
-    
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+btnRegistrar.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const emailValue = inputCorreo.value.trim();
+    const passwordValue = inputPassword.value.trim();
+    if(!emailValue || !passwordValue) return alert("Llena ambos campos");
+
+    const { data, error } = await supabase.auth.signUp({
+        email: emailValue,
+        password: passwordValue,
+    });
+
     if (error) {
-        alert('Error al ingresar: ' + error.message);
+        alert("Hubo un error al registrar: " + error.message);
     } else {
-        // Al ingresar correctamente, hacemos el cambio de pantallas
-        authScreen.style.display = 'none';
-        mainScreen.style.display = 'block';
-        renderList(); 
+        alert("¡Registro exitoso! Ya puedes iniciar sesión.");
     }
 });
 
-// --- 4. CÓDIGO DE TU APLICACIÓN ---
+btnIngresar.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const emailValue = inputCorreo.value.trim();
+    const passwordValue = inputPassword.value.trim();
+    if(!emailValue || !passwordValue) return alert("Llena ambos campos");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailValue,
+        password: passwordValue,
+    });
+
+    if (error) {
+        alert("Error al ingresar: Verifica tu correo y contraseña.");
+    } else {
+        iniciarApp(); 
+    }
+});
+
+function iniciarApp() {
+    authScreen.style.display = 'none';
+    mainScreen.style.display = 'block';
+    renderList(); 
+}
+
+async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+        iniciarApp();
+    }
+}
+checkSession();
+
+// ==========================================
+// 4. LÓGICA DE LA APLICACIÓN
+// ==========================================
 const selectElement = document.getElementById('habit-select');
 const customHabitContainer = document.getElementById('custom-habit-container');
 const otherInput = document.getElementById('other-input');
@@ -48,8 +80,8 @@ const newEmojiBtn = document.getElementById('new-emoji-btn');
 const newEmojiPickerBox = document.getElementById('new-emoji-picker-box');
 const addBtn = document.getElementById('add-btn');
 const habitList = document.getElementById('habit-list');
-const detailScreen = document.getElementById('detail-screen');
 const backBtn = document.getElementById('back-btn');
+
 const detailTitle = document.getElementById('detail-title');
 const detailDate = document.getElementById('detail-date');
 const detailCount = document.getElementById('detail-count');
@@ -58,6 +90,7 @@ const detailEmoji = document.getElementById('detail-emoji');
 const detailHistoryList = document.getElementById('detail-history-list');
 const deleteBtn = document.getElementById('delete-btn');
 const detailPlusBtn = document.getElementById('detail-plus-btn');
+
 const editBtn = document.getElementById('edit-btn');
 const viewMode = document.getElementById('view-mode');
 const editMode = document.getElementById('edit-mode');
@@ -86,7 +119,7 @@ availableEmojis.forEach(emoji => {
     const spanEdit = document.createElement('span');
     spanEdit.textContent = emoji;
     spanEdit.className = 'emoji-option';
-    spanEdit.addEventListener('click', () => {
+    spanEdit.addEventListener('click', () => { 
         editEmojiBtn.textContent = emoji; 
         emojiPickerBox.style.display = 'none'; 
     });
@@ -95,19 +128,19 @@ availableEmojis.forEach(emoji => {
     const spanAdd = document.createElement('span');
     spanAdd.textContent = emoji;
     spanAdd.className = 'emoji-option';
-    spanAdd.addEventListener('click', () => {
+    spanAdd.addEventListener('click', () => { 
         newEmojiBtn.textContent = emoji; 
         newEmojiPickerBox.style.display = 'none'; 
     });
     newEmojiPickerBox.appendChild(spanAdd);
 });
 
-editEmojiBtn.addEventListener('click', () => {
-    emojiPickerBox.style.display = emojiPickerBox.style.display === 'none' ? 'grid' : 'none';
+editEmojiBtn.addEventListener('click', () => { 
+    emojiPickerBox.style.display = emojiPickerBox.style.display === 'none' ? 'grid' : 'none'; 
 });
 
-newEmojiBtn.addEventListener('click', () => {
-    newEmojiPickerBox.style.display = newEmojiPickerBox.style.display === 'none' ? 'grid' : 'none';
+newEmojiBtn.addEventListener('click', () => { 
+    newEmojiPickerBox.style.display = newEmojiPickerBox.style.display === 'none' ? 'grid' : 'none'; 
 });
 
 selectElement.addEventListener('change', function() {
@@ -132,13 +165,8 @@ function updateSelectOptions() {
         const option = options[i];
         if (option.value !== "" && option.value !== "Otro") {
             const exists = habitsData.some(habit => habit.name === option.value);
-            if (exists) {
-                option.hidden = true;
-                option.style.display = 'none';
-            } else {
-                option.hidden = false;
-                option.style.display = '';
-            }
+            option.hidden = exists;
+            option.style.display = exists ? 'none' : '';
         }
     }
 }
@@ -155,9 +183,7 @@ function renderChart(habit) {
                 const monthIndex = parseInt(parts[1], 10) - 1; 
                 const year = parts[2];
                 const label = `${monthNames[monthIndex]} ${year}`;
-                if (!monthlyData[label]) {
-                    monthlyData[label] = 0;
-                }
+                if (!monthlyData[label]) monthlyData[label] = 0;
                 monthlyData[label]++;
             }
         });
@@ -167,7 +193,7 @@ function renderChart(habit) {
     const dataPoints = Object.values(monthlyData);
 
     if (myChart) myChart.destroy();
-
+    
     myChart = new Chart(ctx, {
         type: 'line', 
         data: {
@@ -184,11 +210,11 @@ function renderChart(habit) {
                 fill: true 
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-            plugins: { legend: { display: false } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, 
+            plugins: { legend: { display: false } } 
         }
     });
 }
@@ -283,31 +309,48 @@ deleteBtn.addEventListener('click', () => {
     }
 });
 
-detailPlusBtn.addEventListener('click', (event) => {
-    if (currentHabitIndex === -1) return;
-    event.stopPropagation();
+async function sumarRecaida(index, eventContenedor) {
+    if (index === -1) return;
     
-    const rect = detailCount.getBoundingClientRect();
+    const rect = eventContenedor.getBoundingClientRect();
     const floatingPlus = document.createElement('span');
     floatingPlus.textContent = '+1';
     floatingPlus.className = 'floating-plus';
     floatingPlus.style.left = `${rect.left + window.scrollX + (rect.width / 2) - 10}px`;
     floatingPlus.style.top = `${rect.top + window.scrollY - 15}px`;
     document.body.appendChild(floatingPlus);
-    
     setTimeout(() => floatingPlus.remove(), 400);
 
-    if (!habitsData[currentHabitIndex].history) habitsData[currentHabitIndex].history = [];
+    if (!habitsData[index].history) habitsData[index].history = [];
 
     const now = new Date();
     const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
     const timeOptions = { hour: '2-digit', minute: '2-digit' };
     const dateString = `${now.toLocaleDateString('es-MX', dateOptions)} a las ${now.toLocaleTimeString('es-MX', timeOptions)}`;
 
-    habitsData[currentHabitIndex].history.push(dateString);
-    habitsData[currentHabitIndex].count++;
-    
+    habitsData[index].history.push(dateString);
+    habitsData[index].count++;
     saveData();
+
+    const fechaActual = now.toISOString().split('T')[0]; 
+    const { error } = await supabase
+        .from('registros')
+        .insert([
+            { 
+                nombre_adiccion: habitsData[index].name, 
+                cantidad_recaidas: habitsData[index].count,
+                fecha: fechaActual
+            }
+        ]);
+        
+    if(error) {
+        console.error("Error al guardar en la nube: ", error.message);
+    }
+}
+
+detailPlusBtn.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    await sumarRecaida(currentHabitIndex, detailCount);
     openDetail(habitsData[currentHabitIndex], currentHabitIndex);
     renderList();
 });
@@ -343,29 +386,9 @@ function renderList() {
         plusBtn.className = 'plus-btn';
         plusBtn.textContent = '+1';
         
-        plusBtn.addEventListener('click', (event) => {
+        plusBtn.addEventListener('click', async (event) => {
             event.stopPropagation(); 
-            const rect = countSpan.getBoundingClientRect();
-            const floatingPlus = document.createElement('span');
-            floatingPlus.textContent = '+1';
-            floatingPlus.className = 'floating-plus';
-            floatingPlus.style.left = `${rect.left + window.scrollX + (rect.width / 2) - 10}px`;
-            floatingPlus.style.top = `${rect.top + window.scrollY - 15}px`;
-            document.body.appendChild(floatingPlus);
-            
-            setTimeout(() => floatingPlus.remove(), 400);
-
-            if (!habitsData[index].history) habitsData[index].history = [];
-
-            const now = new Date();
-            const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
-            const timeOptions = { hour: '2-digit', minute: '2-digit' };
-            const dateString = `${now.toLocaleDateString('es-MX', dateOptions)} a las ${now.toLocaleTimeString('es-MX', timeOptions)}`;
-
-            habitsData[index].history.push(dateString);
-            habitsData[index].count++;
-            
-            saveData();
+            await sumarRecaida(index, countSpan);
             renderList();
         });
 
@@ -386,23 +409,18 @@ addBtn.addEventListener('click', () => {
         habitName = otherInput.value.trim();
         habitEmoji = newEmojiBtn.textContent.trim(); 
     } else if (habitName) {
-        const selectedText = selectElement.options[selectElement.selectedIndex].text;
-        habitEmoji = selectedText.split(' ')[0];
+        habitEmoji = selectElement.options[selectElement.selectedIndex].text.split(' ')[0];
     }
 
-    if (!habitName || habitName === '') return;
+    if (!habitName) return;
 
-    const isDuplicate = habitsData.some(habit => habit.name.toLowerCase() === habitName.toLowerCase());
-    if (isDuplicate) return alert('Esta adicción ya está registrada en tu lista.'); 
-
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    const currentDate = new Date().toLocaleDateString('es-MX', options);
+    if (habitsData.some(habit => habit.name.toLowerCase() === habitName.toLowerCase())) return alert('Esta adicción ya está registrada.'); 
 
     habitsData.unshift({
         name: habitName,
         emoji: habitEmoji, 
         count: 0,
-        date: currentDate,
+        date: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
         history: [] 
     });
 

@@ -12,13 +12,15 @@
         
         <div id="auth-screen">
             <h1>Bienvenido 💎</h1>
-            <p class="subtitle">Inicia sesión para controlar tus hábitos</p>
-            <form id="auth-form" class="input-section">
-                <input type="email" id="email-input" placeholder="Correo electrónico" required style="margin-bottom: 12px;">
-                <input type="password" id="password-input" placeholder="Contraseña" required style="margin-bottom: 12px;">
-                <button type="submit" id="login-btn">Ingresar</button>
-                <button type="button" id="register-btn" style="background-color: #6f7e76; margin-top: 10px; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Registrar</button>
-            </form>
+            <p class="subtitle">Inicia sesión o regístrate para guardar tu progreso.</p>
+
+            <div class="input-section">
+                <input type="email" id="input-correo" placeholder="Correo electrónico" required>
+                <input type="password" id="input-password" placeholder="Contraseña" required>
+                
+                <button id="btn-ingresar" type="button">Ingresar</button>
+                <button id="btn-registrar" type="button" style="background-color: #6f7e76; margin-top: 12px;">Registrarme</button>
+            </div>
         </div>
 
         <div id="main-screen" style="display: none;">
@@ -109,6 +111,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>
