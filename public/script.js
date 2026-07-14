@@ -1,12 +1,19 @@
+console.log("🚀 Iniciando lectura del archivo script.js...");
+
 // ==========================================
 // 1. CONFIGURACIÓN DE SUPABASE
 // ==========================================
-const supabaseUrl = 'https://lbpgjngptaliadsbzwkw.supabase.co'; // REEMPLAZA ESTO
-const supabaseKey = 'sb_publishable_Q74oalzTl4iSQReg6xEgpg_25Ff-kcu'; // REEMPLAZA ESTO
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+try {
+    const supabaseUrl = 'https://lbpgjngptaliadsbzwkw.supabase.co';
+    const supabaseKey = 'sb_publishable_Q74oalzTl4iSQReg6xEgpg_25Ff-kcu';
+    window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    console.log("✅ Supabase inicializado correctamente.");
+} catch (error) {
+    console.error("❌ Error fatal al inicializar Supabase:", error);
+}
 
 // ==========================================
-// 2. REFERENCIAS A LA PANTALLA DE AUTENTICACIÓN
+// 2. REFERENCIAS AL HTML
 // ==========================================
 const authScreen = document.getElementById('auth-screen');
 const mainScreen = document.getElementById('main-screen');
@@ -17,61 +24,105 @@ const inputCorreo = document.getElementById('input-correo');
 const inputPassword = document.getElementById('input-password');
 
 // ==========================================
-// 3. LÓGICA DE INICIO DE SESIÓN Y REGISTRO
+// 3. LÓGICA DE NUBE, AUTENTICACIÓN Y SINCRONIZACIÓN
 // ==========================================
+let habitsData = []; // La memoria inicia vacía, esperando a la nube
 
 btnRegistrar.addEventListener('click', async (e) => {
     e.preventDefault();
     const emailValue = inputCorreo.value.trim();
     const passwordValue = inputPassword.value.trim();
-    if(!emailValue || !passwordValue) return alert("Llena ambos campos");
+    if(!emailValue || !passwordValue) return alert("Por favor llena ambos campos para registrarte.");
 
-    const { data, error } = await supabase.auth.signUp({
-        email: emailValue,
-        password: passwordValue,
+    const { data, error } = await window.supabaseClient.auth.signUp({
+        email: emailValue, password: passwordValue,
     });
-
-    if (error) {
-        alert("Hubo un error al registrar: " + error.message);
-    } else {
-        alert("¡Registro exitoso! Ya puedes iniciar sesión.");
-    }
+    if (error) alert("Hubo un error al registrar: " + error.message);
+    else alert("¡Registro exitoso! Ya puedes darle clic a Ingresar.");
 });
 
 btnIngresar.addEventListener('click', async (e) => {
     e.preventDefault();
     const emailValue = inputCorreo.value.trim();
     const passwordValue = inputPassword.value.trim();
-    if(!emailValue || !passwordValue) return alert("Llena ambos campos");
+    if(!emailValue || !passwordValue) return alert("Por favor llena ambos campos para ingresar.");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailValue,
-        password: passwordValue,
+    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+        email: emailValue, password: passwordValue,
     });
-
-    if (error) {
-        alert("Error al ingresar: Verifica tu correo y contraseña.");
-    } else {
-        iniciarApp(); 
-    }
+    if (error) alert("Error al ingresar: Verifica tu correo y contraseña.");
+    else iniciarApp();
 });
 
-function iniciarApp() {
+async function iniciarApp() {
     authScreen.style.display = 'none';
     mainScreen.style.display = 'block';
-    renderList(); 
+
+    // Crear botón dinámico de Cerrar Sesión para pruebas
+    if (!document.getElementById('btn-logout')) {
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'btn-logout';
+        logoutBtn.textContent = 'Cerrar Sesión 🚪';
+        logoutBtn.style.cssText = 'display: block; margin: 0 auto 20px auto; background-color: transparent; color: var(--secondary); border: 1px solid var(--secondary); padding: 8px 16px; font-size: 14px;';
+        logoutBtn.addEventListener('click', async () => {
+            await window.supabaseClient.auth.signOut();
+            habitsData = []; // Vaciamos la memoria
+            mainScreen.style.display = 'none';
+            detailScreen.style.display = 'none';
+            authScreen.style.display = 'block';
+            inputCorreo.value = '';
+            inputPassword.value = '';
+            console.log("👋 Sesión cerrada.");
+        });
+        mainScreen.insertBefore(logoutBtn, mainScreen.firstChild);
+    }
+
+    habitList.innerHTML = '<p style="text-align: center; color: var(--secondary);">Descargando tu información de la nube... ☁️</p>';
+
+    // Descargar datos del usuario desde Supabase
+    const { data: userData } = await window.supabaseClient.auth.getUser();
+    if(userData?.user) {
+        const { data, error } = await window.supabaseClient
+            .from('progreso_usuarios')
+            .select('datos_habitos')
+            .eq('user_id', userData.user.id)
+            .single();
+
+        if (data && data.datos_habitos) {
+            habitsData = data.datos_habitos;
+            console.log("✅ Datos descargados.");
+        } else {
+            console.log("ℹ️ Cuenta nueva. Iniciando lienzo en blanco.");
+            habitsData = [];
+        }
+    }
+    renderList();
 }
 
 async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-        iniciarApp();
-    }
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (session) iniciarApp();
 }
 checkSession();
 
+// FUNCIÓN MAESTRA: Sincroniza cada movimiento hacia Supabase
+async function saveData() {
+    localStorage.setItem('habitsJSON', JSON.stringify(habitsData)); // Respaldo de velocidad visual
+    const { data: userData } = await window.supabaseClient.auth.getUser();
+    if(userData?.user) {
+        const { error } = await window.supabaseClient
+            .from('progreso_usuarios')
+            .upsert({
+                user_id: userData.user.id,
+                datos_habitos: habitsData
+            });
+        if(error) console.error("❌ Error en la nube:", error.message);
+        else console.log("☁️ Nube actualizada con éxito.");
+    }
+}
+
 // ==========================================
-// 4. LÓGICA DE LA APLICACIÓN
+// 4. LÓGICA DE LA APLICACIÓN DE HÁBITOS
 // ==========================================
 const selectElement = document.getElementById('habit-select');
 const customHabitContainer = document.getElementById('custom-habit-container');
@@ -101,7 +152,6 @@ const emojiPickerBox = document.getElementById('emoji-picker-box');
 
 let currentHabitIndex = -1;
 let myChart = null;
-let habitsData = JSON.parse(localStorage.getItem('habitsJSON')) || [];
 
 const quotes = [
     "Cada pequeño paso te acerca a tu meta. ¡Sigue así!",
@@ -155,10 +205,6 @@ selectElement.addEventListener('change', function() {
     }
 });
 
-function saveData() {
-    localStorage.setItem('habitsJSON', JSON.stringify(habitsData));
-}
-
 function updateSelectOptions() {
     const options = selectElement.options;
     for (let i = 0; i < options.length; i++) {
@@ -211,8 +257,7 @@ function renderChart(habit) {
             }]
         },
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
+            responsive: true, maintainAspectRatio: false, 
             scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, 
             plugins: { legend: { display: false } } 
         }
@@ -331,21 +376,6 @@ async function sumarRecaida(index, eventContenedor) {
     habitsData[index].history.push(dateString);
     habitsData[index].count++;
     saveData();
-
-    const fechaActual = now.toISOString().split('T')[0]; 
-    const { error } = await supabase
-        .from('registros')
-        .insert([
-            { 
-                nombre_adiccion: habitsData[index].name, 
-                cantidad_recaidas: habitsData[index].count,
-                fecha: fechaActual
-            }
-        ]);
-        
-    if(error) {
-        console.error("Error al guardar en la nube: ", error.message);
-    }
 }
 
 detailPlusBtn.addEventListener('click', async (event) => {
@@ -413,7 +443,6 @@ addBtn.addEventListener('click', () => {
     }
 
     if (!habitName) return;
-
     if (habitsData.some(habit => habit.name.toLowerCase() === habitName.toLowerCase())) return alert('Esta adicción ya está registrada.'); 
 
     habitsData.unshift({
